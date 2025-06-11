@@ -14,17 +14,10 @@ This is a Dart-based console application implementing a B+ tree data structure. 
   - Level and row numbers (e.g., "Level 1, Row 1 (Root):").
   - Internal nodes: `[key1, key2, ...]`.
   - Leaf nodes: `[(key1:value1), (key2:value2), ...]`.
-- **Colorized Output**:
-  - Blue: Menus and prompts.
-  - Green: Success messages.
-  - Red: Error messages.
-  - Yellow: Tree nodes.
-  - Cyan: Level/row labels.
 
 ## Prerequisites
 - **Dart SDK**: Version 3.0.0 or higher. Install from [dart.dev](https://dart.dev/get-dart).
 - **Terminal**: A terminal supporting ANSI colors (e.g., PowerShell, Windows Terminal, or VS Code integrated terminal).
-- **Operating System**: Instructions are for Windows, but the project is cross-platform.
 
 ## Project Structure
 ```
@@ -63,12 +56,6 @@ bplus_tree_project/
      ```powershell
      dart pub get
      ```
-   - If errors occur, clear the cache:
-     ```powershell
-     del pubspec.lock
-     rmdir /s /q .dart_tool
-     dart pub get
-     ```
 
 ## How to Run
 1. **Navigate to Project Directory**:
@@ -80,18 +67,6 @@ bplus_tree_project/
    ```powershell
    dart run bin/main.dart
    ```
-
-3. **Interact with the Console**:
-   - Enter the maximum number of keys per node (e.g., `3`).
-   - Use the menu to:
-     - Insert a value (auto-generates a key).
-     - Search for a value by key (keys shown in tree output).
-     - Find key-value pairs in a key range.
-     - Remove a key-value pair by key.
-     - Add a random value.
-     - Reset the tree.
-     - Exit.
-   - After each operation, the tree structure is displayed with level/row numbers and root tag.
 
 ## Example Usage
 ```
@@ -115,14 +90,13 @@ Enter your choice (1-7): [Blue]
 Enter value (integer): [Blue]
 100
 Inserted value 100. Tree structure: [Green]
-Level 1, Row 1 (Root): [Cyan]
+Level 1 (Root): [Cyan]
   [(1:100)] [Yellow]
 ```
 
 ## Notes
 - **Keys**: The tree auto-generates sequential keys (1, 2, ...) for inserted values. Check the tree output to find keys for search/remove/range operations.
 - **Colors**: Requires a terminal supporting ANSI colors (e.g., PowerShell, Windows Terminal). If colors don’t display, try a different terminal.
-- **Debugging**: If the tree structure looks incorrect, note the input sequence and output for troubleshooting.
 
 ## License
 This project is for educational purposes and provided as-is. Feel free to modify and extend it as needed.
