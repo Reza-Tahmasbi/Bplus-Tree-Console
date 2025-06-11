@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:main/bplus_tree.dart';
 import 'package:main/models/node.dart';
 
-// Utility class for ANSI color codes
+/// Utility class providing ANSI color codes for styling console output.
 class ConsoleColor {
   static const String reset = '\x1B[0m';
   static const String red = '\x1B[31m';
@@ -12,10 +12,12 @@ class ConsoleColor {
   static const String blue = '\x1B[34m';
   static const String cyan = '\x1B[36m';
 
+  /// Returns the [text] wrapped in the given [color] ANSI code.
   static String colored(String text, String color) => '$color$text$reset';
 }
 
 void main() {
+  // Welcome and configuration
   print(ConsoleColor.colored('Welcome to the B+ Tree Console Application!', ConsoleColor.blue));
   print(ConsoleColor.colored('Enter the maximum number of keys per node:', ConsoleColor.blue));
   int? maxKeys = int.tryParse(stdin.readLineSync() ?? '');
@@ -23,10 +25,12 @@ void main() {
     print(ConsoleColor.colored('Invalid input. Using default maxKeys = 3.', ConsoleColor.red));
     maxKeys = 3;
   }
+
   final tree = BPlusTree(maxKeys);
   print(ConsoleColor.colored('Initial tree:', ConsoleColor.blue));
   _printTreeWithColor(tree);
 
+  // Main interactive loop
   while (true) {
     print(ConsoleColor.colored('\n=== B+ Tree Menu ===', ConsoleColor.blue));
     print(ConsoleColor.colored('1. Insert a value', ConsoleColor.blue));
@@ -39,8 +43,10 @@ void main() {
     print(ConsoleColor.colored('Enter your choice (1-7):', ConsoleColor.blue));
 
     String? choice = stdin.readLineSync();
+
     switch (choice) {
       case '1':
+        // Insert a value
         print(ConsoleColor.colored('Enter value (integer):', ConsoleColor.blue));
         int? value = int.tryParse(stdin.readLineSync() ?? '');
         if (value != null) {
@@ -53,6 +59,7 @@ void main() {
         break;
 
       case '2':
+        // Search for a key
         print(ConsoleColor.colored('Enter key to search (integer):', ConsoleColor.blue));
         int? key = int.tryParse(stdin.readLineSync() ?? '');
         if (key != null) {
@@ -70,6 +77,7 @@ void main() {
         break;
 
       case '3':
+        // Find range of keys
         print(ConsoleColor.colored('Enter start key (integer):', ConsoleColor.blue));
         int? start = int.tryParse(stdin.readLineSync() ?? '');
         print(ConsoleColor.colored('Enter end key (integer):', ConsoleColor.blue));
@@ -92,6 +100,7 @@ void main() {
         break;
 
       case '4':
+        // Remove a key
         print(ConsoleColor.colored('Enter key to remove (integer):', ConsoleColor.blue));
         int? key = int.tryParse(stdin.readLineSync() ?? '');
         if (key != null) {
@@ -104,28 +113,35 @@ void main() {
         break;
 
       case '5':
+        // Add a random value
         tree.addRandom();
         print(ConsoleColor.colored('Inserted a random value. Tree structure:', ConsoleColor.green));
         _printTreeWithColor(tree);
         break;
 
       case '6':
+        // Reset the tree
         tree.reset();
         print(ConsoleColor.colored('Tree has been reset. Tree structure:', ConsoleColor.green));
         _printTreeWithColor(tree);
         break;
 
       case '7':
+        // Exit application
         print(ConsoleColor.colored('Exiting...', ConsoleColor.blue));
         exit(0);
 
       default:
+        // Invalid menu option
         print(ConsoleColor.colored('Invalid choice. Please enter a number between 1 and 7.', ConsoleColor.red));
     }
   }
 }
 
-// Helper function to print the tree with colored output, row numbers, and root tag
+/// Helper function to visually display the B+ Tree structure in a human-readable format.
+///
+/// Nodes are grouped by tree level. Each node's keys (and values for leaf nodes)
+/// are printed with appropriate ANSI coloring and labeled with level and row.
 void _printTreeWithColor(BPlusTree tree) {
   if (tree.root == null) {
     print(ConsoleColor.colored('Tree is empty', ConsoleColor.yellow));
@@ -134,6 +150,8 @@ void _printTreeWithColor(BPlusTree tree) {
 
   List<List<Node>> levels = [];
   List<Node> currentLevel = [tree.root!];
+
+  // Traverse the tree level by level (BFS)
   while (currentLevel.isNotEmpty) {
     levels.add(currentLevel);
     List<Node> nextLevel = [];
@@ -146,13 +164,15 @@ void _printTreeWithColor(BPlusTree tree) {
     currentLevel = nextLevel;
   }
 
+  // Print each level with row and content formatting
   for (int i = 0; i < levels.length; i++) {
     int rowNumber = 1;
     for (Node node in levels[i]) {
       String label = i == 0 && rowNumber == 1
-          ? 'Level ${i + 1}, Row $rowNumber (Root):'
-          : 'Level ${i + 1}, Row $rowNumber:';
+          ? 'Level ${i + 1} (Root):'
+          : 'Level ${i + 1}';
       print(ConsoleColor.colored(label, ConsoleColor.cyan));
+
       if (node.isLeaf) {
         LeafNode leaf = node as LeafNode;
         List<String> pairs = [];

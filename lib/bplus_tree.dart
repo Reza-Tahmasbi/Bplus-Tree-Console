@@ -2,25 +2,32 @@ import 'dart:math';
 
 import 'package:main/models/node.dart';
 
+/// A B+ Tree implementation with support for insert, delete, search,
+/// and range queries. Auto-generates integer keys for inserted values.
 class BPlusTree {
   Node? root;
-  final int maxKeys;
-  int _keyCounter; // Tracks next available key
+  final int maxKeys; // Maximum number of keys allowed per node
+  int _keyCounter; // Tracks next available key for insertion
 
+  /// Constructs a B+ tree with the given maximum number of keys per node.
+  /// Initializes root as a new empty LeafNode.
   BPlusTree(this.maxKeys) : _keyCounter = 1 {
     root = LeafNode([], null, null, []);
   }
 
-  // Insert a value, auto-generating a key
+  /// Inserts a value into the B+ Tree with an auto-incremented key.
   void insert(int value) {
     int key = _keyCounter++;
     LeafNode leafNode = _findLeaf(key);
     leafNode.insertKeyValue(key, value);
+
+    // If leaf node overflows, split it
     if (leafNode.keys.length > maxKeys) {
       _splitLeaf(leafNode);
     }
   }
 
+  /// Traverses the tree to locate the leaf node where the key should reside.
   LeafNode _findLeaf(int key) {
     Node? current = root;
     while (!current!.isLeaf) {
@@ -34,19 +41,27 @@ class BPlusTree {
     return current as LeafNode;
   }
 
+  /// Splits an overflown leaf node into two and promotes the middle key to the parent.
   void _splitLeaf(LeafNode leaf) {
     int mid = (leaf.keys.length / 2).floor();
+
+    // Divide keys and values into left and right halves
     List<int> leftKeys = leaf.keys.sublist(0, mid);
     List<int> leftValues = leaf.values.sublist(0, mid);
     List<int> rightKeys = leaf.keys.sublist(mid);
     List<int> rightValues = leaf.values.sublist(mid);
 
+    // Create the new right node
     LeafNode right = LeafNode(rightKeys, leaf.parent, leaf.next, rightValues);
+
+    // Update current (left) node
     leaf.keys = leftKeys;
     leaf.values = leftValues;
     leaf.next = right;
 
     int splitKey = right.keys[0];
+
+    // Promote key to parent or create new root
     if (leaf.parent == null) {
       root = InternalNode([splitKey], null, [leaf, right]);
       leaf.parent = root;
@@ -60,15 +75,20 @@ class BPlusTree {
       parent.keys.insert(i, splitKey);
       parent.children.insert(i + 1, right);
       right.parent = parent;
+
+      // Recursively handle parent overflow
       if (parent.keys.length > maxKeys) {
         _splitInternal(parent);
       }
     }
   }
 
+  /// Splits an overflown internal node and promotes the middle key.
   void _splitInternal(InternalNode node) {
     int mid = (node.keys.length / 2).floor();
     int splitKey = node.keys[mid];
+
+    // Divide keys and children
     List<int> leftKeys = node.keys.sublist(0, mid);
     List<int> rightKeys = node.keys.sublist(mid + 1);
     List<Node> leftChildren = node.children.sublist(0, mid + 1);
@@ -77,9 +97,11 @@ class BPlusTree {
     InternalNode left = InternalNode(leftKeys, node.parent, leftChildren);
     InternalNode right = InternalNode(rightKeys, node.parent, rightChildren);
 
+    // Update parent pointers
     for (Node child in leftChildren) child.parent = left;
     for (Node child in rightChildren) child.parent = right;
 
+    // Promote the split key
     if (node.parent == null) {
       root = InternalNode([splitKey], null, [left, right]);
       left.parent = root;
@@ -93,12 +115,15 @@ class BPlusTree {
       parent.children.insert(i + 1, right);
       left.parent = parent;
       right.parent = parent;
+
+      // Recursively handle parent overflow
       if (parent.keys.length > maxKeys) {
         _splitInternal(parent);
       }
     }
   }
 
+  /// Searches for a value by key. Returns null if the key is not found.
   int? search(int key) {
     LeafNode leafNode = _findLeaf(key);
     int index = leafNode.keys.indexOf(key);
@@ -108,9 +133,11 @@ class BPlusTree {
     return null;
   }
 
+  /// Retrieves a list of key-value pairs whose keys fall within [start, end].
   List<MapEntry<int, int>> findRange(int start, int end) {
     List<MapEntry<int, int>> rangeList = [];
     LeafNode? currentNode = _findLeaf(start);
+
     while (currentNode != null) {
       for (int i = 0; i < currentNode.keys.length; i++) {
         int key = currentNode.keys[i];
@@ -123,11 +150,13 @@ class BPlusTree {
     return rangeList;
   }
 
+  /// Resets the B+ tree to its initial state (empty).
   void reset() {
     root = LeafNode([], null, null, []);
-    _keyCounter = 1; // Reset key counter
+    _keyCounter = 1;
   }
 
+  /// Removes a key and its associated value from the tree.
   void remove(int key) {
     LeafNode leafNode = _findLeaf(key);
     int index = leafNode.keys.indexOf(key);
@@ -135,6 +164,7 @@ class BPlusTree {
       leafNode.keys.removeAt(index);
       leafNode.values.removeAt(index);
 
+      // If underflow occurs and node isn't root, handle it
       int minKeys = (maxKeys / 2).ceil();
       if (leafNode.keys.length < minKeys && leafNode != root) {
         _handleUnderflowLeaf(leafNode);
@@ -142,6 +172,7 @@ class BPlusTree {
     }
   }
 
+  /// Handles underflow in a leaf node by merging or redistributing.
   void _handleUnderflowLeaf(LeafNode node) {
     if (node == root) {
       if (node.keys.isEmpty) {
@@ -155,10 +186,14 @@ class BPlusTree {
 
     LeafNode? sibling;
     int separatorIndex = -1;
+
+    // Try to find a right sibling
     if (nodeIndex < parent.children.length - 1) {
       sibling = parent.children[nodeIndex + 1] as LeafNode;
       separatorIndex = nodeIndex;
-    } else if (nodeIndex > 0) {
+    }
+    // Or a left sibling
+    else if (nodeIndex > 0) {
       sibling = parent.children[nodeIndex - 1] as LeafNode;
       separatorIndex = nodeIndex - 1;
       LeafNode temp = node;
@@ -169,6 +204,7 @@ class BPlusTree {
 
     if (sibling == null) return;
 
+    // Merge nodes
     node.keys.addAll(sibling.keys);
     node.values.addAll(sibling.values);
     node.next = sibling.next;
@@ -185,6 +221,7 @@ class BPlusTree {
     }
   }
 
+  /// Handles underflow in an internal node by merging or redistributing.
   void _handleUnderflowInternal(InternalNode node) {
     if (node == root) {
       if (node.keys.isEmpty) {
@@ -203,10 +240,14 @@ class BPlusTree {
 
     InternalNode? sibling;
     int separatorIndex = -1;
+
+    // Try right sibling
     if (nodeIndex < parent.children.length - 1) {
       sibling = parent.children[nodeIndex + 1] as InternalNode;
       separatorIndex = nodeIndex;
-    } else if (nodeIndex > 0) {
+    }
+    // Or left sibling
+    else if (nodeIndex > 0) {
       sibling = parent.children[nodeIndex - 1] as InternalNode;
       separatorIndex = nodeIndex - 1;
       InternalNode temp = node;
@@ -217,6 +258,7 @@ class BPlusTree {
 
     if (sibling == null) return;
 
+    // Merge nodes
     int separatorKey = parent.keys[separatorIndex];
     node.keys.add(separatorKey);
     node.keys.addAll(sibling.keys);
@@ -237,9 +279,10 @@ class BPlusTree {
     }
   }
 
+  /// Inserts a random value between 1 and 100 into the tree.
   void addRandom() {
     Random random = Random();
-    int randomValue = random.nextInt(100) + 1; // Random value from 1 to 100
+    int randomValue = random.nextInt(100) + 1;
     insert(randomValue);
   }
 }
